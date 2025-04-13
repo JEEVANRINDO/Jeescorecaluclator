@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JEE Score Checker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background: linear-gradient(to right, #dbe9f4, #f6fafd);
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 650px;
+      width: 100%;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+      padding: 30px;
+      animation: fadeIn 0.8s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h1 {
+      text-align: center;
+      color: #007BFF;
+      margin-bottom: 30px;
+    }
+    input {
+      width: 95%;
+      padding: 14px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 16px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #28a745, #218838);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    button:hover {
+      transform: scale(1.02);
+    }
+    .info, .result {
+      margin-top: 25px;
+      animation: fadeIn 0.6s ease;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 12px;
+      text-align: left;
+      border-radius: 8px;
+    }
+    th {
+      background-color: #f9f9f9;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+    }
+    .highlight-score {
+      font-size: 24px;
+      color: #28a745;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px;
+      margin-top: 10px;
+      background: #e9f9ee;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>JEE Score Checker</h1>
+  <input type="text" id="urlInput" placeholder="Paste your JEE response sheet URL">
+  <button onclick="checkScore()">Check Score</button>
+
+  <div class="info" id="info"></div>
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+  async function checkScore() {
+    const url = document.getElementById("urlInput").value.trim();
+    const resultDiv = document.getElementById("result");
+    const infoDiv = document.getElementById("info");
+    resultDiv.innerHTML = "";
+    infoDiv.innerHTML = "<p style='text-align:center'>Fetching your result...</p>";
+
+    try {
+      const res = await fetch("https://bc02-2401-4900-2182-bec9-987c-7861-783e-ee9e.ngrok-free.app/check-score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: url })
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        resultDiv.innerHTML = `<p class="error">Error: ${data.error}</p>`;
+        return;
+      }
+
+      // Display candidate details from data.user
+      let infoHTML = `<h3>Candidate Details</h3><table>`;
+      for (let key in data.user) {
+        infoHTML += `<tr><th>${key}</th><td>${data.user[key]}</td></tr>`;
+      }
+      infoHTML += `</table>`;
+      infoDiv.innerHTML = infoHTML;
+
+      // Display score summary
+      resultDiv.innerHTML = `
+        <h3>Score Summary</h3>
+        <table>
+          <tr><th>Correct</th><td>${data.correct}</td></tr>
+          <tr><th>Incorrect</th><td>${data.incorrect}</td></tr>
+          <tr><th>Unattempted</th><td>${data.unattempted}</td></tr>
+        </table>
+        <div class="highlight-score">Total Score: ${data.total_score}</div>
+      `;
+    } catch (err) {
+      resultDiv.innerHTML = `<p class="error">Something went wrong. Is the Flask server running?</p>`;
+      console.error(err);
+    }
+  }
+</script>
+
+</body>
+</html>
